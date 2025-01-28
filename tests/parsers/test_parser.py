@@ -2,7 +2,7 @@ import logging
 
 from nomad.datamodel import EntryArchive
 
-from foobar.parsers.parser import NewParser
+from nomad_luqy_plugin.parsers.parser import NewParser
 
 
 def test_parse_file():

@@ -6,7 +6,7 @@ class NewParserEntryPoint(ParserEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
     def load(self):
-        from foobar.parsers.parser import NewParser
+        from nomad_luqy_plugin.parsers.parser import NewParser
 
         return NewParser(**self.dict())
 

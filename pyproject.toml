@@ -13,7 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: Apache Software License",
 ]
-name = "foobar"
+name = "nomad-luqy-plugin"
 description = "A plugin to manage LuQY Pro measurement data"
 version = "0.1.0"
 readme = "README.md"
@@ -77,7 +77,7 @@ select = [
     "UP",
     # isort
     "I",
-    # pylint 
+    # pylint
     "PL",
 ]
 

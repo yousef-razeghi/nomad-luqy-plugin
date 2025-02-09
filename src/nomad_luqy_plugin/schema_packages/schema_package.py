@@ -1,11 +1,10 @@
 import numpy as np
 import plotly.express as px
-
-from nomad.metainfo import (
-    Quantity,
-    Section,
-    SubSection,
-    SchemaPackage,
+import plotly.graph_objects as go
+from nomad.config import config
+from nomad.datamodel.data import (
+    ArchiveSection,
+    EntryData,
 )
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
@@ -20,13 +19,13 @@ from nomad.datamodel.metainfo.plot import (
     PlotlyFigure,
     PlotSection,
 )
-from nomad.datamodel.data import (
-    EntryData,
-    ArchiveSection,
+from nomad.metainfo import (
+    Quantity,
+    SchemaPackage,
+    Section,
+    SubSection,
 )
 from nomad_measurements.general import NOMADMeasurementsCategory
-
-from nomad.config import config
 
 configuration = config.get_plugin_entry_point(
     'nomad_luqy_plugin.schema_packages:schema_package_entry_point'
@@ -77,7 +76,7 @@ class AbsPLSettings(ArchiveSection):
     delay_time = Quantity(
         type=np.float64,
         unit='s',
-        description='Delay time, e.g. 0.000.',
+        description='Delay time of collection from illumination, 2.0.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='Delay time (s)'
         ),
@@ -90,16 +89,18 @@ class AbsPLSettings(ArchiveSection):
             label='EQE @ laser wavelength',
         ),
     )
-    laser_spot_size_cm2 = Quantity(
+    laser_spot_size = Quantity(
         type=np.float64,
-        description='Laser spot size in cm², e.g. 0.10.',
+        unit='cm**2',
+        description='Laser spot size.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='Laser spot size (cm²)'
         ),
     )
-    subcell_area_cm2 = Quantity(
+    subcell_area = Quantity(
         type=np.float64,
-        description='Subcell area in cm², e.g. 1.000.',
+        unit='cm**2',
+        description='Subcell area.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='Subcell area (cm²)'
         ),
@@ -173,84 +174,6 @@ class AbsPLResult(MeasurementResult):
         description='Dark spectrum counts.',
     )
 
-    def generate_plots(self, archive, logger):
-        """
-        Creates two plots of the raw_spectrum_counts vs. wavelength:
-        - Linear y-axis
-        - Log y-axis
-        """
-        plots = []
-        if self.wavelength is None or self.raw_spectrum_counts is None:
-            logger.debug(
-                'No data for plotting: wavelength or raw_spectrum_counts is None.'
-            )
-            return plots
-
-        x = self.wavelength
-        y = self.raw_spectrum_counts
-        logger.debug('Generating PL plots', x_len=len(x), y_len=len(y))
-
-        # 1) Linear scale plot
-        fig_linear = px.line(
-            x=x,
-            y=y,
-            labels={'x': 'Wavelength (nm)', 'y': 'Raw Spectrum (counts)'},
-            title='Absolute PL Spectrum (Linear Scale)',
-        )
-        fig_linear.update_layout(
-            template='plotly_white',
-            hovermode='closest',
-            dragmode='zoom',
-            xaxis=dict(fixedrange=False),
-            yaxis=dict(fixedrange=False),
-            width=600,
-            height=500,
-        )
-        fig_linear.update_traces(
-            hovertemplate='Wavelength: %{x} nm<br>Counts: %{y:.2f}'
-        )
-        plot_json = fig_linear.to_plotly_json()
-        plot_json['config'] = dict(scrollZoom=False)
-
-        plots.append(
-            PlotlyFigure(
-                label='AbsPL Spectrum (linear scale)',
-                figure=plot_json,
-                description='Raw PL spectrum vs. wavelength with linear y-axis.',
-            )
-        )
-
-        # 2) Log scale plot
-        fig_log = px.line(
-            x=x,
-            y=y,
-            labels={'x': 'Wavelength (nm)', 'y': 'Raw Spectrum (counts)'},
-            title='Absolute PL Spectrum (Log Scale)',
-            log_y=True,
-        )
-        fig_log.update_layout(
-            template='plotly_white',
-            hovermode='closest',
-            dragmode='zoom',
-            xaxis=dict(fixedrange=False),
-            yaxis=dict(fixedrange=False),
-            width=600,
-            height=500,
-        )
-        fig_log.update_traces(hovertemplate='Wavelength: %{x} nm<br>Counts: %{y:.2f}')
-        plot_json = fig_log.to_plotly_json()
-        plot_json['config'] = dict(scrollZoom=False)
-
-        plots.append(
-            PlotlyFigure(
-                label='AbsPL Spectrum (log scale)',
-                figure=plot_json,
-                description='Raw PL spectrum vs. wavelength with log y-axis.',
-            )
-        )
-        logger.debug('Created 2 PL plots.')
-        return plots
-
 
 class AbsPLMeasurement(Measurement, EntryData, PlotSection):
     """
@@ -267,7 +190,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
 
     method = Quantity(
         type=str,
-        default='Absolute Photoluminescence (AbsPL)',
+        default='Absolute Photoluminescence',
         description='Type of the measurement method.',
     )
 
@@ -292,7 +215,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
         ),
     )
 
-    def normalize(self, archive, logger):
+    def normalize(self, archive, logger):  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
         logger.debug('Starting AbsPLMeasurement.normalize', data_file=self.data_file)
@@ -346,7 +269,8 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                         break
                     if '\t' in line:
                         parts = line.split('\t', 1)
-                        if len(parts) == 2:
+                        HEADER_PARTS_COUNT = 2
+                        if len(parts) == HEADER_PARTS_COUNT:
                             key = parts[0].strip()
                             val_str = parts[1].strip()
 
@@ -396,11 +320,12 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                 )
                 if data_start_idx is not None and data_start_idx < len(lines):
                     # numeric data lines
+                    MIN_PARTS_COUNT = 4
                     for line in lines[data_start_idx:]:
                         if not line.strip():
                             continue
                         parts = line.split()
-                        if len(parts) < 4:
+                        if len(parts) < MIN_PARTS_COUNT:
                             continue
                         try:
                             w = float(parts[0])
@@ -438,16 +363,99 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                 logger.warning(f'Could not parse the data file "{self.data_file}": {e}')
 
             self.figures = []
-
             fig = px.line(
                 x=self.results[0].wavelength,
                 y=self.results[0].luminescence_flux_density,
-                labels={'x': 'Wavelength (nm)', 'y': 'Raw Spectrum (counts)'},
-                title='Absolute PL Spectrum (Linear Scale)',
+                labels={'x': 'Wavelength', 'y': 'Luminescence Flux'},
+            )
+            fig.update_layout(
+                xaxis={
+                    'title': {'text': 'Wavelength (nm)'},
+                    'mirror': 'ticks',
+                    'showline': True,
+                    'linecolor': 'darkgray',
+                    'ticks': 'inside',
+                    'tickcolor': 'darkgray',
+                    'automargin': True,
+                },
+                yaxis={
+                    'title': {
+                        'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)',
+                    },
+                    'exponentformat': 'power',
+                    'nticks': 5,
+                    'mirror': 'ticks',
+                    'showline': True,
+                    'linecolor': 'darkgray',
+                    'ticks': 'inside',
+                    'tickcolor': 'darkgray',
+                    'automargin': True,
+                },
+                updatemenus=[
+                    {
+                        'buttons': [
+                            {
+                                'label': 'Linear scale',
+                                'method': 'update',
+                                'args': [
+                                    {},
+                                    {
+                                        'yaxis': {
+                                            'type': 'linear',
+                                            'exponentformat': 'power',
+                                            'nticks': 5,
+                                            'mirror': 'ticks',
+                                            'showline': True,
+                                            'linecolor': 'darkgray',
+                                            'ticks': 'inside',
+                                            'tickcolor': 'darkgray',
+                                            'title': {
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
+                                            },
+                                            'automargin': True,
+                                        }
+                                    },
+                                ],
+                            },
+                            {
+                                'label': 'Log scale',
+                                'method': 'update',
+                                'args': [
+                                    {},
+                                    {
+                                        'yaxis': {
+                                            'type': 'log',
+                                            'exponentformat': 'power',
+                                            'nticks': 5,
+                                            'mirror': 'ticks',
+                                            'showline': True,
+                                            'linecolor': 'darkgray',
+                                            'ticks': 'inside',
+                                            'tickcolor': 'darkgray',
+                                            'title': {
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
+                                            },
+                                            'automargin': True,
+                                        }
+                                    },
+                                ],
+                            },
+                        ],
+                        'type': 'buttons',
+                        'direction': 'left',
+                        'showactive': True,
+                        'x': 1.0,
+                        'xanchor': 'right',
+                        'y': 1.15,
+                        'yanchor': 'top',
+                    }
+                ],
+                template='plotly_white',
+                margin={'t': 100},
             )
             self.figures = [
                 PlotlyFigure(
-                    label='AbsPL Spectrum (linear scale)',
+                    label='AbsPL Spectrum (dynamic y-axis)',
                     figure=fig.to_plotly_json(),
                 )
             ]

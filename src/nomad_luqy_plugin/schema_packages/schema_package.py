@@ -36,7 +36,8 @@ m_package = SchemaPackage()
 
 class AbsPLSettings(ArchiveSection):
     """
-    Section containing the metadata/settings for an Absolute Photoluminescence measurement.
+    Section containing the metadata/settings for an Absolute
+    Photoluminescence measurement.
     """
 
     m_def = Section(label='AbsPLSettings')
@@ -128,7 +129,7 @@ class AbsPLResult(MeasurementResult):
             component=ELNComponentEnum.NumberEditQuantity, label='LuQY (%)'
         ),
     )
-    implied_voc = Quantity(
+    quasi_fermi_level_splitting = Quantity(
         type=np.float64,
         unit='eV',
         description='iVoc, e.g. 1.532 (units eV or V).',
@@ -177,7 +178,7 @@ class AbsPLResult(MeasurementResult):
 
 class AbsPLMeasurement(Measurement, EntryData, PlotSection):
     """
-    Main section for an Absolute PL measurement, analogous to the XRD schema.
+    Absolute PL measurement.
     """
 
     m_def = Section(
@@ -194,7 +195,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
         description='Type of the measurement method.',
     )
 
-    abs_pl_settings = SubSection(
+    settings = SubSection(
         section_def=AbsPLSettings,
         description='Settings/metadata related to the AbsPL measurement.',
     )
@@ -219,8 +220,8 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
         super().normalize(archive, logger)
 
         logger.debug('Starting AbsPLMeasurement.normalize', data_file=self.data_file)
-        if self.abs_pl_settings is None:
-            self.abs_pl_settings = AbsPLSettings()
+        if self.settings is None:
+            self.settings = AbsPLSettings()
 
         if self.data_file:
             try:
@@ -252,7 +253,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                 }
                 header_map_result = {
                     'LuQY (%)': 'luminescence_quantum_yield',
-                    'iVoc (V)': 'implied_voc',
+                    'iVoc (V)': 'quasi_fermi_level_splitting',
                     'Bandgap (eV)': 'bandgap',
                     'Jsc (mA/cm2)': 'derived_jsc',
                 }
@@ -274,11 +275,11 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                             key = parts[0].strip()
                             val_str = parts[1].strip()
 
-                            # Map to either abs_pl_settings or results
+                            # Map to either settings or results
                             if key in header_map_settings:
                                 if key == 'Subcell':
                                     setattr(
-                                        self.abs_pl_settings,
+                                        self.settings,
                                         header_map_settings[key],
                                         val_str,
                                     )
@@ -286,7 +287,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                                     try:
                                         val_float = float(val_str)
                                         setattr(
-                                            self.abs_pl_settings,
+                                            self.settings,
                                             header_map_settings[key],
                                             val_float,
                                         )

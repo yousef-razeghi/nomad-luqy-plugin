@@ -26,6 +26,7 @@ from nomad.metainfo import (
     SubSection,
 )
 from nomad_measurements.general import NOMADMeasurementsCategory
+from .abspl_normalizer import parse_abspl_data
 
 configuration = config.get_plugin_entry_point(
     'nomad_luqy_plugin.schema_packages:schema_package_entry_point'
@@ -225,132 +226,27 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
 
         if self.data_file:
             try:
-                # read file in binary mode, decode as cp1252
-                with archive.m_context.raw_file(self.data_file, mode='rb') as f:
-                    raw_bytes = f.read()
-                text = raw_bytes.decode('cp1252', errors='replace')
-                lines = text.splitlines()
-                logger.debug(
-                    'Read data file lines', file=self.data_file, total_lines=len(lines)
-                )
+                # Call the new parser function
+                (
+                    settings_vals,
+                    result_vals,
+                    wavelengths,
+                    lum_flux,
+                    raw_counts,
+                    dark_counts,
+                ) = parse_abspl_data(self.data_file, archive, logger)
 
-                # Prepare arrays for spectral data
-                wavelengths = []
-                lum_flux = []
-                raw_counts = []
-                dark_counts = []
+                # Set settings
+                for key, val in settings_vals.items():
+                    setattr(self.settings, key, val)
 
-                header_map_settings = {
-                    'Laser intensity (suns)': 'laser_intensity_suns',
-                    'Bias Voltage (V)': 'bias_voltage',
-                    'SMU current density (mA/cm2)': 'smu_current_density',
-                    'Integration Time (ms)': 'integration_time',
-                    'Delay time (s)': 'delay_time',
-                    'EQE @ laser wavelength': 'eqe_laser_wavelength',
-                    'Laser spot size (cm²)': 'laser_spot_size_cm2',
-                    'Subcell area (cm²)': 'subcell_area_cm2',
-                    'Subcell': 'subcell_description',
-                }
-                header_map_result = {
-                    'LuQY (%)': 'luminescence_quantum_yield',
-                    'iVoc (V)': 'quasi_fermi_level_splitting',
-                    'Bandgap (eV)': 'bandgap',
-                    'Jsc (mA/cm2)': 'derived_jsc',
-                }
-
-                header_done = False
-                data_start_idx = None
-
-                # Read lines up to dashed separator
-                for idx, line in enumerate(lines):
-                    line_stripped = line.strip()
-                    if line_stripped.startswith('---'):
-                        data_start_idx = idx + 2  # skip dashed line + header line
-                        header_done = True
-                        break
-                    if '\t' in line:
-                        parts = line.split('\t', 1)
-                        HEADER_PARTS_COUNT = 2
-                        if len(parts) == HEADER_PARTS_COUNT:
-                            key = parts[0].strip()
-                            val_str = parts[1].strip()
-
-                            # Map to either settings or results
-                            if key in header_map_settings:
-                                if key == 'Subcell':
-                                    setattr(
-                                        self.settings,
-                                        header_map_settings[key],
-                                        val_str,
-                                    )
-                                else:
-                                    try:
-                                        val_float = float(val_str)
-                                        setattr(
-                                            self.settings,
-                                            header_map_settings[key],
-                                            val_float,
-                                        )
-                                    except ValueError:
-                                        logger.debug(
-                                            'Could not convert header to float',
-                                            key=key,
-                                            val=val_str,
-                                        )
-                                        pass
-                            elif key in header_map_result:
-                                if not self.results:
-                                    self.results = [AbsPLResult()]
-                                try:
-                                    val_float = float(val_str)
-                                    setattr(
-                                        self.results[0],
-                                        header_map_result[key],
-                                        val_float,
-                                    )
-                                except ValueError:
-                                    logger.debug(
-                                        'Could not convert result to float',
-                                        key=key,
-                                        val=val_str,
-                                    )
-                                    pass
-
-                logger.debug(
-                    'Header parsed', header_done=header_done, data_start=data_start_idx
-                )
-                if data_start_idx is not None and data_start_idx < len(lines):
-                    # numeric data lines
-                    MIN_PARTS_COUNT = 4
-                    for line in lines[data_start_idx:]:
-                        if not line.strip():
-                            continue
-                        parts = line.split()
-                        if len(parts) < MIN_PARTS_COUNT:
-                            continue
-                        try:
-                            w = float(parts[0])
-                            lf = float(parts[1])
-                            rc = float(parts[2])
-                            dc = float(parts[3])
-                            wavelengths.append(w)
-                            lum_flux.append(lf)
-                            raw_counts.append(rc)
-                            dark_counts.append(dc)
-                        except ValueError:
-                            logger.debug('Could not parse numeric row', row=line)
-                            pass
-
-                logger.debug(
-                    'Parsed numeric data',
-                    w_count=len(wavelengths),
-                    lf_count=len(lum_flux),
-                    rc_count=len(raw_counts),
-                    dc_count=len(dark_counts),
-                )
-
+                # Set results header values
                 if not self.results:
                     self.results = [AbsPLResult()]
+                for key, val in result_vals.items():
+                    setattr(self.results[0], key, val)
+
+                # Set spectral array data
                 self.results[0].wavelength = np.array(wavelengths, dtype=float)
                 self.results[0].luminescence_flux_density = np.array(
                     lum_flux, dtype=float
@@ -363,6 +259,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
             except Exception as e:
                 logger.warning(f'Could not parse the data file "{self.data_file}": {e}')
 
+            # Plotting remains unchanged
             self.figures = []
             fig = px.line(
                 x=self.results[0].wavelength,
@@ -411,7 +308,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                                             'ticks': 'inside',
                                             'tickcolor': 'darkgray',
                                             'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
                                             },
                                             'automargin': True,
                                         }
@@ -434,7 +331,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                                             'ticks': 'inside',
                                             'tickcolor': 'darkgray',
                                             'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
                                             },
                                             'automargin': True,
                                         }

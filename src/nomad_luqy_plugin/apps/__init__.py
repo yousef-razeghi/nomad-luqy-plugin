@@ -1,15 +1,15 @@
 from nomad.config.models.plugins import AppEntryPoint
 from nomad.config.models.ui import (
     App,
+    Axis,  # added for histogram x-axis
     Column,
     Columns,
     FilterMenu,
     FilterMenus,
-    SearchQuantities,
     Menu,  # for settings menu
     MenuItemHistogram,  # use histogram for numeric data
     MenuSizeEnum,  # for menu sizing
-    Axis,  # added for histogram x-axis
+    SearchQuantities,
 )
 
 schemas = [

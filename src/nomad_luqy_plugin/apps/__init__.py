@@ -4,8 +4,6 @@ from nomad.config.models.ui import (
     Axis,  # added for histogram x-axis
     Column,
     Columns,
-    FilterMenu,
-    FilterMenus,
     Menu,  # for settings menu
     MenuItemHistogram,
     MenuItemTerms,  # use histogram for numeric data
@@ -36,25 +34,25 @@ app_entry_point = AppEntryPoint(
                     selected=False,
                 ),
                 'sample_name': Column(
-                    quantity='data.samples[0].name#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                    quantity='data.samples[0].name#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                     selected=True,
                 ),
                 'luqy': Column(
-                    quantity='data.results[0].luminescence_quantum_yield#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                    quantity='data.results[0].luminescence_quantum_yield#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                     selected=True,
                     label='LuQY (%)',
                 ),
                 'bandgap': Column(
-                    quantity='data.results[0].bandgap#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                    quantity='data.results[0].bandgap#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                     selected=True,
                 ),
                 'quasi_fermi_level_splitting': Column(
-                    quantity='data.results[0].quasi_fermi_level_splitting#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                    quantity='data.results[0].quasi_fermi_level_splitting#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                     selected=True,
                     label='QFLS',
                 ),
                 'derived_jsc': Column(
-                    quantity='data.results[0].derived_jsc#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                    quantity='data.results[0].derived_jsc#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                     selected=True,
                     format={'decimals': 3, 'mode': 'standard'},
                     unit='mA/cm**2',
@@ -70,7 +68,7 @@ app_entry_point = AppEntryPoint(
                     items=[
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.settings.laser_intensity_suns#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.settings.laser_intensity_suns#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='Laser Intensity (suns)',
                             ),
                             show_input=True,
@@ -78,7 +76,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.settings.bias_voltage#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.settings.bias_voltage#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='Bias Voltage',
                             ),
                             show_input=True,
@@ -86,7 +84,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.settings.smu_current_density#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.settings.smu_current_density#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='SMU Current Density',
                                 unit='mA/cm**2',
                             ),
@@ -109,7 +107,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.entry_datetime#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.entry_datetime#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='Datetime',
                             ),
                             show_input=True,
@@ -125,7 +123,7 @@ app_entry_point = AppEntryPoint(
                     items=[
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.results[0].luminescence_quantum_yield#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.results[0].luminescence_quantum_yield#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='LuQY (%)',
                             ),
                             show_input=True,
@@ -133,7 +131,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.results[0].bandgap#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.results[0].bandgap#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='Bandgap',
                             ),
                             show_input=True,
@@ -141,7 +139,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.results[0].quasi_fermi_level_splitting#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.results[0].quasi_fermi_level_splitting#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='QFLS',
                             ),
                             show_input=True,
@@ -149,7 +147,7 @@ app_entry_point = AppEntryPoint(
                         ),
                         MenuItemHistogram(
                             x=Axis(
-                                search_quantity='data.results[0].derived_jsc#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+                                search_quantity='data.results[0].derived_jsc#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',  # noqa: E501
                                 title='Jsc',
                                 unit='mA/cm**2',
                                 format={'decimals': 3, 'mode': 'standard'},

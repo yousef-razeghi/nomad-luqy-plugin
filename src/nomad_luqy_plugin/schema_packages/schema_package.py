@@ -1,6 +1,5 @@
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
@@ -26,6 +25,7 @@ from nomad.metainfo import (
     SubSection,
 )
 from nomad_measurements.general import NOMADMeasurementsCategory
+
 from .abspl_normalizer import parse_abspl_data
 
 configuration = config.get_plugin_entry_point(
@@ -177,18 +177,10 @@ class AbsPLResult(MeasurementResult):
     )
 
 
-class AbsPLMeasurement(Measurement, EntryData, PlotSection):
+class AbsPLMeasurement(Measurement, PlotSection):
     """
     Absolute PL measurement.
     """
-
-    m_def = Section(
-        label='Absolute PL Measurement',
-        categories=[NOMADMeasurementsCategory],
-        a_eln=ELNAnnotation(
-            lane_width='800px',
-        ),
-    )
 
     method = Quantity(
         type=str,
@@ -220,45 +212,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
     def normalize(self, archive, logger):  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
-        logger.debug('Starting AbsPLMeasurement.normalize', data_file=self.data_file)
-        if self.settings is None:
-            self.settings = AbsPLSettings()
-
-        if self.data_file:
-            try:
-                # Call the new parser function
-                (
-                    settings_vals,
-                    result_vals,
-                    wavelengths,
-                    lum_flux,
-                    raw_counts,
-                    dark_counts,
-                ) = parse_abspl_data(self.data_file, archive, logger)
-
-                # Set settings
-                for key, val in settings_vals.items():
-                    setattr(self.settings, key, val)
-
-                # Set results header values
-                if not self.results:
-                    self.results = [AbsPLResult()]
-                for key, val in result_vals.items():
-                    setattr(self.results[0], key, val)
-
-                # Set spectral array data
-                self.results[0].wavelength = np.array(wavelengths, dtype=float)
-                self.results[0].luminescence_flux_density = np.array(
-                    lum_flux, dtype=float
-                )
-                self.results[0].raw_spectrum_counts = np.array(raw_counts, dtype=float)
-                self.results[0].dark_spectrum_counts = np.array(
-                    dark_counts, dtype=float
-                )
-
-            except Exception as e:
-                logger.warning(f'Could not parse the data file "{self.data_file}": {e}')
-
+        if self.results:
             # Plotting remains unchanged
             self.figures = []
             fig = px.line(
@@ -308,7 +262,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                                             'ticks': 'inside',
                                             'tickcolor': 'darkgray',
                                             'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
                                             },
                                             'automargin': True,
                                         }
@@ -331,7 +285,7 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
                                             'ticks': 'inside',
                                             'tickcolor': 'darkgray',
                                             'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
+                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
                                             },
                                             'automargin': True,
                                         }
@@ -361,6 +315,57 @@ class AbsPLMeasurement(Measurement, EntryData, PlotSection):
             logger.debug('No results exist to generate plots.')
 
         logger.debug('Finished AbsPLMeasurement.normalize')
+
+
+class AbsPLMeasurementEntry(AbsPLMeasurement, EntryData):
+    m_def = Section(
+        label='Absolute PL Measurement',
+        categories=[NOMADMeasurementsCategory],
+        a_eln=ELNAnnotation(
+            lane_width='800px',
+        ),
+    )
+
+    def normalize(self, archive, logger):  # noqa: PLR0912, PLR0915
+        logger.debug('Starting AbsPLMeasurement.normalize', data_file=self.data_file)
+        if self.settings is None:
+            self.settings = AbsPLSettings()
+
+        if self.data_file:
+            try:
+                # Call the new parser function
+                (
+                    settings_vals,
+                    result_vals,
+                    wavelengths,
+                    lum_flux,
+                    raw_counts,
+                    dark_counts,
+                ) = parse_abspl_data(self.data_file, archive, logger)
+
+                # Set settings
+                for key, val in settings_vals.items():
+                    setattr(self.settings, key, val)
+
+                # Set results header values
+                if not self.results:
+                    self.results = [AbsPLResult()]
+                for key, val in result_vals.items():
+                    setattr(self.results[0], key, val)
+
+                # Set spectral array data
+                self.results[0].wavelength = np.array(wavelengths, dtype=float)
+                self.results[0].luminescence_flux_density = np.array(
+                    lum_flux, dtype=float
+                )
+                self.results[0].raw_spectrum_counts = np.array(raw_counts, dtype=float)
+                self.results[0].dark_spectrum_counts = np.array(
+                    dark_counts, dtype=float
+                )
+
+            except Exception as e:
+                logger.warning(f'Could not parse the data file "{self.data_file}": {e}')
+        super().normalize(archive, logger)
 
 
 m_package.__init_metainfo__()

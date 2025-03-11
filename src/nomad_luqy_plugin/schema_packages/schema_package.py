@@ -317,7 +317,7 @@ class AbsPLMeasurement(Measurement, PlotSection):
         logger.debug('Finished AbsPLMeasurement.normalize')
 
 
-class AbsPLMeasurementEntry(AbsPLMeasurement, EntryData):
+class AbsPLMeasurementELN(AbsPLMeasurement, EntryData):
     m_def = Section(
         label='Absolute PL Measurement',
         categories=[NOMADMeasurementsCategory],

@@ -12,7 +12,7 @@ from nomad.config.models.ui import (
 )
 
 schemas = [
-    '*#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurement',
+    '*#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurementELN',
 ]
 
 app_entry_point = AppEntryPoint(

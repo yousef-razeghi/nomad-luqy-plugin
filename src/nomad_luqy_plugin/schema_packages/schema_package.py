@@ -303,7 +303,6 @@ class AbsPLMeasurement(Measurement, PlotSection):
                     }
                 ],
                 template='plotly_white',
-                margin={'t': 100},
             )
             self.figures = [
                 PlotlyFigure(

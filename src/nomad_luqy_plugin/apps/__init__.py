@@ -7,16 +7,11 @@ from nomad.config.models.ui import (
     Dashboard,
     Layout,
     Menu,  # for settings menu
-    MenuItemCustomQuantities,
     MenuItemHistogram,
-    MenuItemOptimade,
-    MenuItemPeriodicTable,
     MenuItemTerms,  # use histogram for numeric data
     MenuSizeEnum,  # for menu sizing
     SearchQuantities,
-    WidgetPeriodicTable,
     WidgetScatterPlot,
-    WidgetTerms,
 )
 
 schemas = [
@@ -77,7 +72,7 @@ app_entry_point = AppEntryPoint(
                     items=[
                         MenuItemHistogram(
                             x={
-                                'search_quantity': 'data.settings.laser_intensity_suns#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurementELN'
+                                'search_quantity': 'data.settings.laser_intensity_suns#nomad_luqy_plugin.schema_packages.schema_package.AbsPLMeasurementELN'  # noqa: E501
                             },  # noqa: E501
                             title='Laser Intensity (suns)',
                             show_input=True,

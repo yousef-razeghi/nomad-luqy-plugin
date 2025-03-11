@@ -53,7 +53,7 @@ class AbsPLSettings(ArchiveSection):
     )
     bias_voltage = Quantity(
         type=np.float64,
-        description='Bias voltage in volts, e.g. 0.0000.',
+        description='Bias voltage.',
         unit='V',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='Bias Voltage'
@@ -61,7 +61,7 @@ class AbsPLSettings(ArchiveSection):
     )
     smu_current_density = Quantity(
         type=np.float64,
-        description='SMU current density in mA/cm².',
+        description='SMU current density.',
         unit='mA/cm**2',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='SMU current density'
@@ -80,7 +80,7 @@ class AbsPLSettings(ArchiveSection):
         unit='s',
         description='Delay time of collection from illumination, 2.0.',
         a_eln=ELNAnnotation(
-            component=ELNComponentEnum.NumberEditQuantity, label='Delay time (s)'
+            component=ELNComponentEnum.NumberEditQuantity, label='Delay time'
         ),
     )
     eqe_laser_wavelength = Quantity(
@@ -96,7 +96,7 @@ class AbsPLSettings(ArchiveSection):
         unit='cm**2',
         description='Laser spot size.',
         a_eln=ELNAnnotation(
-            component=ELNComponentEnum.NumberEditQuantity, label='Laser spot size (cm²)'
+            component=ELNComponentEnum.NumberEditQuantity, label='Laser spot size'
         ),
     )
     subcell_area = Quantity(
@@ -104,7 +104,7 @@ class AbsPLSettings(ArchiveSection):
         unit='cm**2',
         description='Subcell area.',
         a_eln=ELNAnnotation(
-            component=ELNComponentEnum.NumberEditQuantity, label='Subcell area (cm²)'
+            component=ELNComponentEnum.NumberEditQuantity, label='Subcell area'
         ),
     )
     subcell_description = Quantity(
@@ -133,15 +133,15 @@ class AbsPLResult(MeasurementResult):
     quasi_fermi_level_splitting = Quantity(
         type=np.float64,
         unit='eV',
-        description='iVoc, e.g. 1.532 (units eV or V).',
+        description='Quasi-Fermi level splitting in eV, e.g. 1.23.',
         a_eln=ELNAnnotation(
-            component=ELNComponentEnum.NumberEditQuantity, label='Implied Voc'
+            component=ELNComponentEnum.NumberEditQuantity, label='QFLS'
         ),
     )
     bandgap = Quantity(
         type=np.float64,
         unit='eV',
-        description="""Bandgap in eV, e.g. 1.532.""",
+        description='Bandgap in eV, e.g. 1.532.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.NumberEditQuantity, label='Bandgap'
         ),
@@ -163,7 +163,7 @@ class AbsPLResult(MeasurementResult):
         type=np.float64,
         unit='s / (cm**2 * nm)',
         shape=['*'],
-        description='Luminescence flux density in photons/(s cm² nm).',
+        description='Luminescence flux density.',
     )
     raw_spectrum_counts = Quantity(
         type=np.float64,

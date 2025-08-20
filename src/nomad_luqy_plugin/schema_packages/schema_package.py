@@ -209,111 +209,126 @@ class AbsPLMeasurement(Measurement, PlotSection):
         ),
     )
 
-    def normalize(self, archive, logger):  # noqa: PLR0912, PLR0915
-        super().normalize(archive, logger)
+def normalize(self, archive, logger):  # noqa: PLR0912, PLR0915
+    # New plotter function for AbsPLMeasurement
+    super().normalize(archive, logger)
+    print('*** *** *** New plotting function for AbsPLMeasurement *** *** ***')
 
-        if self.results:
-            # Plotting remains unchanged
-            self.figures = []
-            fig = px.line(
-                x=self.results[0].wavelength,
-                y=self.results[0].luminescence_flux_density,
-                labels={'x': 'Wavelength', 'y': 'Luminescence Flux'},
-            )
-            fig.update_layout(
-                xaxis={
-                    'title': {'text': 'Wavelength (nm)'},
-                    'mirror': 'ticks',
-                    'showline': True,
-                    'linecolor': 'darkgray',
-                    'ticks': 'inside',
-                    'tickcolor': 'darkgray',
-                    'automargin': True,
-                },
-                yaxis={
-                    'title': {
-                        'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)',
-                    },
-                    'exponentformat': 'power',
-                    'nticks': 5,
-                    'mirror': 'ticks',
-                    'showline': True,
-                    'linecolor': 'darkgray',
-                    'ticks': 'inside',
-                    'tickcolor': 'darkgray',
-                    'automargin': True,
-                },
-                updatemenus=[
-                    {
-                        'buttons': [
-                            {
-                                'label': 'Linear scale',
-                                'method': 'update',
-                                'args': [
-                                    {},
-                                    {
-                                        'yaxis': {
-                                            'type': 'linear',
-                                            'exponentformat': 'power',
-                                            'nticks': 5,
-                                            'mirror': 'ticks',
-                                            'showline': True,
-                                            'linecolor': 'darkgray',
-                                            'ticks': 'inside',
-                                            'tickcolor': 'darkgray',
-                                            'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
-                                            },
-                                            'automargin': True,
-                                        }
-                                    },
-                                ],
-                            },
-                            {
-                                'label': 'Log scale',
-                                'method': 'update',
-                                'args': [
-                                    {},
-                                    {
-                                        'yaxis': {
-                                            'type': 'log',
-                                            'exponentformat': 'power',
-                                            'nticks': 5,
-                                            'mirror': 'ticks',
-                                            'showline': True,
-                                            'linecolor': 'darkgray',
-                                            'ticks': 'inside',
-                                            'tickcolor': 'darkgray',
-                                            'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
-                                            },
-                                            'automargin': True,
-                                        }
-                                    },
-                                ],
-                            },
-                        ],
-                        'type': 'buttons',
-                        'direction': 'left',
-                        'showactive': True,
-                        'x': 1.0,
-                        'xanchor': 'right',
-                        'y': 1.15,
-                        'yanchor': 'top',
-                    }
-                ],
-                template='plotly_white',
-            )
-            self.figures = [
-                PlotlyFigure(
-                    label='AbsPL Spectrum (dynamic y-axis)',
-                    figure=fig.to_plotly_json(),
+    if self.results:
+        import plotly.graph_objects as go
+
+        self.figures = []
+
+        # Initialize the figure with go.Figure
+        fig = go.Figure()
+
+        # Add a trace for each result
+        for i, result in enumerate(self.results):
+            fig.add_trace(
+                go.Scatter(
+                    x=result.wavelength,
+                    y=result.luminescence_flux_density,
+                    mode='lines',
+                    name=f"Dataset {i + 1}"
                 )
-            ]
-        else:
-            logger.debug('No results exist to generate plots.')
+            )
 
-        logger.debug('Finished AbsPLMeasurement.normalize')
+        # Common layout updates
+        fig.update_layout(
+            xaxis={
+                'title': {'text': 'Wavelength (nm)'},
+                'mirror': 'ticks',
+                'showline': True,
+                'linecolor': 'darkgray',
+                'ticks': 'inside',
+                'tickcolor': 'darkgray',
+                'automargin': True,
+            },
+            yaxis={
+                'title': {
+                    'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)',
+                },
+                'exponentformat': 'power',
+                'nticks': 5,
+                'mirror': 'ticks',
+                'showline': True,
+                'linecolor': 'darkgray',
+                'ticks': 'inside',
+                'tickcolor': 'darkgray',
+                'automargin': True,
+            },
+            updatemenus=[
+                {
+                    'buttons': [
+                        {
+                            'label': 'Linear scale',
+                            'method': 'update',
+                            'args': [
+                                {},
+                                {
+                                    'yaxis': {
+                                        'type': 'linear',
+                                        'exponentformat': 'power',
+                                        'nticks': 5,
+                                        'mirror': 'ticks',
+                                        'showline': True,
+                                        'linecolor': 'darkgray',
+                                        'ticks': 'inside',
+                                        'tickcolor': 'darkgray',
+                                        'title': {
+                                            'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
+                                        },
+                                        'automargin': True,
+                                    }
+                                },
+                            ],
+                        },
+                        {
+                            'label': 'Log scale',
+                            'method': 'update',
+                            'args': [
+                                {},
+                                {
+                                    'yaxis': {
+                                        'type': 'log',
+                                        'exponentformat': 'power',
+                                        'nticks': 5,
+                                        'mirror': 'ticks',
+                                        'showline': True,
+                                        'linecolor': 'darkgray',
+                                        'ticks': 'inside',
+                                        'tickcolor': 'darkgray',
+                                        'title': {
+                                            'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'
+                                        },
+                                        'automargin': True,
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                    'type': 'buttons',
+                    'direction': 'left',
+                    'showactive': True,
+                    'x': 1.0,
+                    'xanchor': 'right',
+                    'y': 1.15,
+                    'yanchor': 'top',
+                }
+            ],
+            template='plotly_white',
+        )
+
+        self.figures = [
+            PlotlyFigure(
+                label='AbsPL Spectrum (dynamic y-axis)',
+                figure=fig.to_plotly_json(),
+            )
+        ]
+    else:
+        logger.debug('No results exist to generate plots.')
+
+    logger.debug('Finished AbsPLMeasurement.normalize')
 
 
 class AbsPLMeasurementELN(AbsPLMeasurement, EntryData):

@@ -1,5 +1,7 @@
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+
 from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
@@ -213,13 +215,47 @@ class AbsPLMeasurement(Measurement, PlotSection):
         super().normalize(archive, logger)
 
         if self.results:
-            # Plotting remains unchanged
+
             self.figures = []
-            fig = px.line(
-                x=self.results[0].wavelength,
-                y=self.results[0].luminescence_flux_density,
-                labels={'x': 'Wavelength', 'y': 'Luminescence Flux'},
-            )
+
+            x = np.asarray(self.results[0].wavelength)
+            y_raw = np.asarray(self.results[0].luminescence_flux_density)
+
+            # --- detect & reshape into (n_series, N) ---
+            if y_raw.ndim == 1:
+                if x.size == 0 or y_raw.size % x.size != 0:
+                    # Fallback: plot as single series if sizes don't align
+                    y_2d = y_raw.reshape(1, -1)
+                else:
+                    n_series = y_raw.size // x.size
+                    y_2d = y_raw.reshape(n_series, x.size)
+            elif y_raw.ndim == 2:
+                # Try to align so that axis 1 matches x
+                if y_raw.shape[1] == x.size:
+                    y_2d = y_raw
+                elif y_raw.shape[0] == x.size:
+                    y_2d = y_raw.T
+                else:
+                    # Fallback: flatten to a single series
+                    y_2d = y_raw.reshape(1, -1)
+            else:
+                # Unexpected shape, fallback to single series
+                y_2d = y_raw.reshape(1, -1)
+
+            # --- build figure with one trace per curve ---
+            fig = go.Figure()
+            for i, y_vec in enumerate(y_2d):
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=y_vec,
+                        mode='lines',
+                        name=f'Curve {i+1}',
+                        hovertemplate='Wavelength: %{x}<br>Luminescence: %{y}<extra></extra>',
+                    )
+                )
+
+            # --- shared layout & y-scale toggle (same as your original) ---
             fig.update_layout(
                 xaxis={
                     'title': {'text': 'Wavelength (nm)'},
@@ -231,9 +267,7 @@ class AbsPLMeasurement(Measurement, PlotSection):
                     'automargin': True,
                 },
                 yaxis={
-                    'title': {
-                        'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)',
-                    },
+                    'title': {'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'},
                     'exponentformat': 'power',
                     'nticks': 5,
                     'mirror': 'ticks',
@@ -242,55 +276,20 @@ class AbsPLMeasurement(Measurement, PlotSection):
                     'ticks': 'inside',
                     'tickcolor': 'darkgray',
                     'automargin': True,
+                    'type': 'linear',
                 },
                 updatemenus=[
                     {
                         'buttons': [
                             {
                                 'label': 'Linear scale',
-                                'method': 'update',
-                                'args': [
-                                    {},
-                                    {
-                                        'yaxis': {
-                                            'type': 'linear',
-                                            'exponentformat': 'power',
-                                            'nticks': 5,
-                                            'mirror': 'ticks',
-                                            'showline': True,
-                                            'linecolor': 'darkgray',
-                                            'ticks': 'inside',
-                                            'tickcolor': 'darkgray',
-                                            'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
-                                            },
-                                            'automargin': True,
-                                        }
-                                    },
-                                ],
+                                'method': 'relayout',
+                                'args': [{'yaxis.type': 'linear'}],
                             },
                             {
                                 'label': 'Log scale',
-                                'method': 'update',
-                                'args': [
-                                    {},
-                                    {
-                                        'yaxis': {
-                                            'type': 'log',
-                                            'exponentformat': 'power',
-                                            'nticks': 5,
-                                            'mirror': 'ticks',
-                                            'showline': True,
-                                            'linecolor': 'darkgray',
-                                            'ticks': 'inside',
-                                            'tickcolor': 'darkgray',
-                                            'title': {
-                                                'text': 'Luminescence Flux (cm⁻² s⁻¹ nm⁻¹)'  # noqa: E501
-                                            },
-                                            'automargin': True,
-                                        }
-                                    },
-                                ],
+                                'method': 'relayout',
+                                'args': [{'yaxis.type': 'log'}],
                             },
                         ],
                         'type': 'buttons',
@@ -303,7 +302,9 @@ class AbsPLMeasurement(Measurement, PlotSection):
                     }
                 ],
                 template='plotly_white',
+                legend={'title': 'Series'}
             )
+
             self.figures = [
                 PlotlyFigure(
                     label='AbsPL Spectrum (dynamic y-axis)',
@@ -314,6 +315,7 @@ class AbsPLMeasurement(Measurement, PlotSection):
             logger.debug('No results exist to generate plots.')
 
         logger.debug('Finished AbsPLMeasurement.normalize')
+
 
 
 class AbsPLMeasurementELN(AbsPLMeasurement, EntryData):
